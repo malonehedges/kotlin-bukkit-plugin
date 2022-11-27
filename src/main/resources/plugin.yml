@@ -1,0 +1,5 @@
+name: pluginname
+version: '@VERSION@'
+author: malone
+main: io.malone.pluginname.Plugin
+api-version: 1.19

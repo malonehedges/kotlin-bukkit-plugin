@@ -1,0 +1,74 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+buildscript {
+    ext.kotlin_version = '1.7.21'
+
+    repositories {
+        mavenCentral()
+        maven { url = "https://oss.sonatype.org/content/repositories/snapshots/" }
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.7.21'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'java'
+    id 'com.google.devtools.ksp' version '1.7.21-1.0.8'
+}
+
+group = 'io.malone'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://maven-central.storage.googleapis.com' }
+    maven { url 'https://hub.spigotmc.org/nexus/content/groups/public/' }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://oss.sonatype.org/content/repositories/central' }
+    jcenter()
+}
+
+dependencies {
+    compileOnly 'org.spigotmc:spigot-api:1.19.2-R0.1-SNAPSHOT'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version'
+
+    // codegen
+    ksp 'com.squareup.moshi:moshi-kotlin-codegen:1.14.0'
+}
+
+compileKotlin {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    kotlinOptions.jvmTarget = '11'
+}
+
+tasks.processResources {
+    filter ReplaceTokens, tokens: [
+        'VERSION': project.property('version')
+    ]
+}
+
+shadowJar {
+   classifier 'dist'
+    dependencies {
+        exclude(dependency('org.spigotmc:.*:.*'))
+    }
+    exclude '.cache'
+}
+
+task copyFinalJar(type: Copy) {
+    from "build/libs/${shadowJar.archiveName}"
+    into "build"
+    rename(
+            shadowJar.archiveName,
+            "${project.property('name')}-${project.property('version')}.jar"
+    )
+}
+
+build.finalizedBy(shadowJar)
+shadowJar.finalizedBy(copyFinalJar)
